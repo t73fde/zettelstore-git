@@ -13,11 +13,10 @@ package webui
 
 import (
 	"fmt"
-	"html"
-	"html/template"
 	"net/http"
 	"net/url"
 	"strings"
+	"text/template"
 
 	"zettelstore.de/z/ast"
 	"zettelstore.de/z/collect"
@@ -34,12 +33,12 @@ import (
 
 type metaDataInfo struct {
 	Key   string
-	Value template.HTML
+	Value string
 }
 
 type zettelReference struct {
 	Zid    id.Zid
-	Title  template.HTML
+	Title  string
 	HasURL bool
 	URL    string
 }
@@ -48,6 +47,9 @@ type matrixElement struct {
 	Text   string
 	HasURL bool
 	URL    string
+}
+type matrixLine struct {
+	Elements []matrixElement
 }
 
 // MakeGetInfoHandler creates a new HTTP handler for the use case "get zettel".
@@ -114,7 +116,7 @@ func MakeGetInfoHandler(
 		formats := encoder.GetFormats()
 		defFormat := encoder.GetDefaultFormat()
 		parts := []string{"zettel", "meta", "content"}
-		matrix := make([][]matrixElement, 0, len(parts))
+		matrix := make([]matrixLine, 0, len(parts))
 		u := adapter.NewURLBuilder('z').SetZid(zid)
 		for _, part := range parts {
 			row := make([]matrixElement, 0, len(formats)+1)
@@ -127,12 +129,11 @@ func MakeGetInfoHandler(
 				row = append(row, matrixElement{format, true, u.String()})
 				u.ClearQuery()
 			}
-			matrix = append(matrix, row)
+			matrix = append(matrix, matrixLine{row})
 		}
 		base := te.makeBaseData(ctx, langOption.Value, textTitle, user)
 		canCopy := base.CanCreate && !zn.Zettel.Content.IsBinary()
-		te.renderTemplate(ctx, w, id.InfoTemplateZid, struct {
-			baseData
+		te.renderTemplate(ctx, w, id.InfoTemplateZid, base, struct {
 			Zid          string
 			WebURL       string
 			CanWrite     bool
@@ -155,10 +156,9 @@ func MakeGetInfoHandler(
 			LocLinks     []string
 			HasExtLinks  bool
 			ExtLinks     []string
-			ExtNewWindow template.HTMLAttr
-			Matrix       [][]matrixElement
+			ExtNewWindow string
+			Matrix       []matrixLine
 		}{
-			baseData: base,
 			Zid:      zid.String(),
 			WebURL:   adapter.NewURLBuilder('h').SetZid(zid).String(),
 			CanWrite: te.canWrite(ctx, user, zn.Zettel),
@@ -188,7 +188,7 @@ func MakeGetInfoHandler(
 	}
 }
 
-func htmlMetaValue(m *meta.Meta, key string) template.HTML {
+func htmlMetaValue(m *meta.Meta, key string) string {
 	switch m.Type(key) {
 	case meta.TypeBool:
 		var b strings.Builder
@@ -197,17 +197,15 @@ func htmlMetaValue(m *meta.Meta, key string) template.HTML {
 		} else {
 			writeLink(&b, key, "False")
 		}
-		return template.HTML(b.String())
+		return b.String()
 
 	case meta.TypeID:
 		value, _ := m.Get(key)
 		zid, err := id.Parse(value)
 		if err != nil {
-			return template.HTML(value)
+			return value
 		}
-		return template.HTML(
-			"<a href=\"" + adapter.NewURLBuilder('h').SetZid(zid).String() + "\">" +
-				value + "</a>")
+		return "<a href=\"" + adapter.NewURLBuilder('h').SetZid(zid).String() + "\">" + value + "</a>"
 
 	case meta.TypeTagSet, meta.TypeWordSet:
 		values, _ := m.GetList(key)
@@ -218,26 +216,25 @@ func htmlMetaValue(m *meta.Meta, key string) template.HTML {
 			}
 			writeLink(&b, key, tag)
 		}
-		return template.HTML(b.String())
+		return b.String()
 
 	case meta.TypeURL:
 		value, _ := m.Get(key)
 		url, err := url.Parse(value)
 		if err != nil {
-			return template.HTML(html.EscapeString(value))
+			return template.HTMLEscapeString(value)
 		}
-		return template.HTML(
-			"<a href=\"" + url.String() + "\">" + html.EscapeString(value) + "</a>")
+		return "<a href=\"" + url.String() + "\">" + template.HTMLEscapeString(value) + "</a>"
 
 	case meta.TypeWord:
 		value, _ := m.Get(key)
 		var b strings.Builder
 		writeLink(&b, key, value)
-		return template.HTML(b.String())
+		return b.String()
 
 	default:
 		value, _ := m.Get(key)
-		return template.HTML(html.EscapeString(value))
+		return template.HTMLEscapeString(value)
 	}
 }
 
@@ -249,7 +246,7 @@ func writeLink(b *strings.Builder, key, value string) {
 	b.WriteByte('=')
 	b.WriteString(template.URLQueryEscaper(value))
 	b.WriteString("\">")
-	b.WriteString(html.EscapeString(value))
+	b.WriteString(template.HTMLEscapeString(value))
 	b.WriteString("</a>")
 }
 
@@ -282,8 +279,7 @@ func splitIntExtLinks(
 					}
 					u = ub.String()
 				}
-				zetLinks = append(
-					zetLinks, zettelReference{zid, template.HTML(title), len(u) > 0, u})
+				zetLinks = append(zetLinks, zettelReference{zid, title, len(u) > 0, u})
 			}
 		} else if ref.IsExternal() {
 			extLinks = append(extLinks, ref.String())

@@ -12,8 +12,8 @@
 package webui
 
 import (
+	"bytes"
 	"context"
-	"html/template"
 	"net/http"
 	"sync"
 
@@ -28,6 +28,7 @@ import (
 	"zettelstore.de/z/input"
 	"zettelstore.de/z/parser"
 	"zettelstore.de/z/place"
+	"zettelstore.de/z/template"
 	"zettelstore.de/z/web/adapter"
 	"zettelstore.de/z/web/session"
 )
@@ -133,28 +134,11 @@ func (te *TemplateEngine) getTemplate(
 	if t, ok := te.cacheGetTemplate(templateID); ok {
 		return t, nil
 	}
-	baseTemplate, ok := te.cacheGetTemplate(id.BaseTemplateZid)
-	if !ok {
-		baseTemplateZettel, err := te.place.GetZettel(ctx, id.BaseTemplateZid)
-		if err != nil {
-			return nil, err
-		}
-		baseTemplate, err = template.New("base").Parse(
-			baseTemplateZettel.Content.AsString())
-		if err != nil {
-			return nil, err
-		}
-		te.cacheSetTemplate(id.BaseTemplateZid, baseTemplate)
-	}
-	baseTemplate, err := baseTemplate.Clone()
-	if err != nil {
-		return nil, err
-	}
 	realTemplateZettel, err := te.place.GetZettel(ctx, templateID)
 	if err != nil {
 		return nil, err
 	}
-	t, err := baseTemplate.Parse(realTemplateZettel.Content.AsString())
+	t, err := template.ParseString(realTemplateZettel.Content.AsString(), nil)
 	if err == nil {
 		te.cacheSetTemplate(templateID, t)
 	}
@@ -162,12 +146,13 @@ func (te *TemplateEngine) getTemplate(
 }
 
 type simpleLink struct {
-	Text template.HTML
+	Text string
 	URL  string
 }
 
 type baseData struct {
 	Lang           string
+	MetaHeader     string
 	StylesheetURL  string
 	Title          string
 	HomeURL        string
@@ -186,7 +171,8 @@ type baseData struct {
 	CanReload      bool
 	ReloadURL      string
 	SearchURL      string
-	FooterHTML     template.HTML
+	Content        string
+	FooterHTML     string
 }
 
 func (te *TemplateEngine) makeBaseData(
@@ -227,13 +213,13 @@ func (te *TemplateEngine) makeBaseData(
 		CanReload:      te.policy.CanReload(user),
 		ReloadURL:      te.reloadURL,
 		SearchURL:      te.searchURL,
-		FooterHTML:     template.HTML(runtime.GetFooterHTML()),
+		FooterHTML:     runtime.GetFooterHTML(),
 	}
 }
 
 // htmlAttrNewWindow eturns HTML attribute string for opening a link in a new window.
 // If hasURL is false an empty string is returned.
-func htmlAttrNewWindow(hasURL bool) template.HTMLAttr {
+func htmlAttrNewWindow(hasURL bool) string {
 	if hasURL {
 		return " target=\"_blank\" ref=\"noopener noreferrer\""
 	}
@@ -274,7 +260,7 @@ func (te *TemplateEngine) fetchNewTemplates(
 				}
 			}
 			result = append(result, simpleLink{
-				Text: template.HTML(menuTitle),
+				Text: menuTitle,
 				URL:  adapter.NewURLBuilder('n').SetZid(m.Zid).String(),
 			})
 		}
@@ -286,8 +272,14 @@ func (te *TemplateEngine) renderTemplate(
 	ctx context.Context,
 	w http.ResponseWriter,
 	templateID id.Zid,
+	base baseData,
 	data interface{}) {
 
+	bt, err := te.getTemplate(ctx, id.BaseTemplateZid)
+	if err != nil {
+		adapter.InternalServerError(w, "Unable to get base template", err)
+		return
+	}
 	t, err := te.getTemplate(ctx, templateID)
 	if err != nil {
 		adapter.InternalServerError(w, "Unable to get template", err)
@@ -300,9 +292,12 @@ func (te *TemplateEngine) renderTemplate(
 			session.SetToken(w, t, htmlLifetime)
 		}
 	}
+	var content bytes.Buffer
+	err = t.Render(&content, data)
+	base.Content = content.String()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err = t.Execute(w, data)
+	err = bt.Render(w, base)
 	if err != nil {
-		adapter.InternalServerError(w, "Unable to execute template", err)
+		adapter.InternalServerError(w, "Unable to render template", err)
 	}
 }

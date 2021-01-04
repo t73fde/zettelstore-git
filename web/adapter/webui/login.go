@@ -35,12 +35,13 @@ func MakeGetLoginHandler(te *TemplateEngine) http.HandlerFunc {
 
 func renderLoginForm(
 	ctx context.Context, w http.ResponseWriter, te *TemplateEngine, retry bool) {
-	te.renderTemplate(ctx, w, id.LoginTemplateZid, struct {
-		baseData
+	base := te.makeBaseData(ctx, runtime.GetDefaultLang(), "Login", nil)
+	te.renderTemplate(ctx, w, id.LoginTemplateZid, base, struct {
+		Title string
 		Retry bool
 	}{
-		baseData: te.makeBaseData(ctx, runtime.GetDefaultLang(), "Login", nil),
-		Retry:    retry,
+		Title: base.Title,
+		Retry: retry,
 	})
 }
 
