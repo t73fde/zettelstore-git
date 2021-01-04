@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"text/template"
 
 	"zettelstore.de/z/ast"
 	"zettelstore.de/z/collect"
@@ -26,6 +25,7 @@ import (
 	"zettelstore.de/z/encoder"
 	"zettelstore.de/z/parser"
 	"zettelstore.de/z/place"
+	"zettelstore.de/z/strfun"
 	"zettelstore.de/z/usecase"
 	"zettelstore.de/z/web/adapter"
 	"zettelstore.de/z/web/session"
@@ -221,10 +221,17 @@ func htmlMetaValue(m *meta.Meta, key string) string {
 	case meta.TypeURL:
 		value, _ := m.Get(key)
 		url, err := url.Parse(value)
+		var sb strings.Builder
 		if err != nil {
-			return template.HTMLEscapeString(value)
+			strfun.HTMLEscape(&sb, value, false)
+			return sb.String()
 		}
-		return "<a href=\"" + url.String() + "\">" + template.HTMLEscapeString(value) + "</a>"
+		sb.WriteString("<a href=\"")
+		sb.WriteString(url.String())
+		sb.WriteString("\">")
+		strfun.HTMLEscape(&sb, value, false)
+		sb.WriteString("</a>")
+		return sb.String()
 
 	case meta.TypeWord:
 		value, _ := m.Get(key)
@@ -234,7 +241,9 @@ func htmlMetaValue(m *meta.Meta, key string) string {
 
 	default:
 		value, _ := m.Get(key)
-		return template.HTMLEscapeString(value)
+		var sb strings.Builder
+		strfun.HTMLEscape(&sb, value, false)
+		return sb.String()
 	}
 }
 
@@ -242,11 +251,11 @@ func writeLink(b *strings.Builder, key, value string) {
 	b.WriteString("<a href=\"")
 	b.WriteString(adapter.NewURLBuilder('h').String())
 	b.WriteByte('?')
-	b.WriteString(template.URLQueryEscaper(key))
+	b.WriteString(url.QueryEscape(key))
 	b.WriteByte('=')
-	b.WriteString(template.URLQueryEscaper(value))
+	b.WriteString(url.QueryEscape(value))
 	b.WriteString("\">")
-	b.WriteString(template.HTMLEscapeString(value))
+	strfun.HTMLEscape(b, value, false)
 	b.WriteString("</a>")
 }
 

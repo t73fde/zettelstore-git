@@ -62,11 +62,9 @@ var enabledTests = map[string]map[string]bool{
 		"Standalone Without Newline":       true,
 	},
 	"interpolation.json": map[string]bool{
-		"No Interpolation":    true,
-		"Basic Interpolation": true,
-		// disabled b/c Go uses "&#34;" in place of "&quot;"
-		// both are valid escapings, and we validate the behavior in mustache_test.go
-		"HTML Escaping":                                false,
+		"No Interpolation":                             true,
+		"Basic Interpolation":                          true,
+		"HTML Escaping":                                true,
 		"Triple Mustache":                              true,
 		"Ampersand":                                    true,
 		"Basic Integer Interpolation":                  true,

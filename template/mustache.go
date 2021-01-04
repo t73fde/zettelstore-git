@@ -26,7 +26,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"text/template"
+
+	"zettelstore.de/z/strfun"
 )
 
 // Node represents a node in the parse tree.
@@ -597,7 +598,7 @@ func (tmpl *Template) renderNode(w io.Writer, node node, contextChain []reflect.
 				fmt.Fprint(w, val.Interface())
 			} else {
 				s := fmt.Sprint(val.Interface())
-				template.HTMLEscape(w, []byte(s))
+				strfun.HTMLEscape(w, s, false)
 			}
 		}
 	case *sectionNode:
