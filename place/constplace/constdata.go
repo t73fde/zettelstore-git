@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	syntaxTemplate = "go-template-html"
+	syntaxTemplate = "mustache"
 )
 
 var constZettelMap = map[id.Zid]constZettel{
