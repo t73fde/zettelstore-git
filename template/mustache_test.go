@@ -23,7 +23,6 @@ package template_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 	"testing"
@@ -212,37 +211,13 @@ func parseString(data string) (*template.Template, error) {
 	return template.ParseString(data, nil)
 }
 
-func render(tmpl *template.Template, context ...interface{}) (string, error) {
+func render(tmpl *template.Template, data interface{}) (string, error) {
 	var buf bytes.Buffer
-	err := tmpl.Render(&buf, context...)
+	err := tmpl.Render(&buf, data)
 	return buf.String(), err
 }
 
-// RenderInLayout uses the given data source - generally a map or struct - to
-// render the compiled template and layout "wrapper" template and return the
-// output.
-func renderInLayout(tmpl *template.Template, layout *template.Template, context ...interface{}) (string, error) {
-	var buf bytes.Buffer
-	err := fRenderInLayout(tmpl, &buf, layout, context...)
-	if err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// FRenderInLayout uses the given data source - generally a map or struct - to
-// render the compiled templated a loayout "wrapper" template to an io.Writer.
-func fRenderInLayout(tmpl *template.Template, w io.Writer, layout *template.Template, context ...interface{}) error {
-	content, err := render(tmpl, context...)
-	if err != nil {
-		return err
-	}
-	allContext := make([]interface{}, len(context)+1)
-	copy(allContext[1:], context)
-	allContext[0] = map[string]string{"content": content}
-	return layout.Render(w, allContext...)
-}
-func renderString(data string, errMissing bool, context ...interface{}) (string, error) {
+func renderString(data string, errMissing bool, value interface{}) (string, error) {
 	tmpl, err := parseString(data)
 	if err != nil {
 		return "", err
@@ -250,7 +225,7 @@ func renderString(data string, errMissing bool, context ...interface{}) (string,
 	if errMissing {
 		tmpl.SetErrorOnMissing()
 	}
-	return render(tmpl, context...)
+	return render(tmpl, value)
 }
 
 func TestBasic(t *testing.T) {
@@ -306,23 +281,6 @@ func TestMissing(t *testing.T) {
 	}
 }
 
-func TestMultiContext(t *testing.T) {
-	output, err := renderString(`{{hello}} {{World}}`, false, map[string]string{"hello": "hello"}, struct{ World string }{"world"})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	output2, err := renderString(`{{hello}} {{World}}`, false, struct{ World string }{"world"}, map[string]string{"hello": "hello"})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	if output != "hello world" || output2 != "hello world" {
-		t.Errorf("TestMultiContext expected %q got %q", "hello world", output)
-		return
-	}
-}
-
 var malformed = []Test{
 	{`{{#a}}{{}}{{/a}}`, Data{true, "hello"}, "", fmt.Errorf("line 1: empty tag")},
 	{`{{}}`, nil, "", fmt.Errorf("line 1: empty tag")},
@@ -364,53 +322,6 @@ var layoutTests = []LayoutTest{
 	{`Header {{content}} Footer`, `Hello {{content}}`, map[string]string{"content": "World"}, `Header Hello World Footer`},
 	{`Header {{extra}} {{content}} Footer`, `Hello {{content}}`, map[string]string{"content": "World", "extra": "extra"}, `Header extra Hello World Footer`},
 	{`Header {{content}} {{content}} Footer`, `Hello {{content}}`, map[string]string{"content": "World"}, `Header Hello World Hello World Footer`},
-}
-
-func renderInLayoutString(data, layout string, context interface{}) (string, error) {
-	tmplLay, err := parseString(layout)
-	if err != nil {
-		return "", err
-	}
-	tmplDat, err := parseString(data)
-	if err != nil {
-		return "", err
-	}
-	return renderInLayout(tmplDat, tmplLay, context)
-}
-
-func TestLayout(t *testing.T) {
-	for _, test := range layoutTests {
-		output, err := renderInLayoutString(test.tmpl, test.layout, test.context)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		if output != test.expected {
-			t.Errorf("%q expected %q got %q", test.tmpl, test.expected, output)
-		}
-	}
-}
-
-func TestLayoutToWriter(t *testing.T) {
-	for _, test := range layoutTests {
-		tmpl, err := parseString(test.tmpl)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		layoutTmpl, err := parseString(test.layout)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		var buf bytes.Buffer
-		err = fRenderInLayout(tmpl, &buf, layoutTmpl, test.context)
-		if err != nil {
-			t.Error(err)
-		} else if buf.String() != test.expected {
-			t.Errorf("%q expected %q got %q", test.tmpl, test.expected, buf.String())
-		}
-	}
 }
 
 type Person struct {
