@@ -127,7 +127,9 @@ func renderZettelForm(
 	ctx := r.Context()
 	user := session.GetUser(ctx)
 	m := zettel.Meta
-	te.renderTemplate(r.Context(), w, id.FormTemplateZid, te.makeBaseData(ctx, runtime.GetLang(m), title, user), formZettelData{
+	var base baseData
+	te.makeBaseData(ctx, runtime.GetLang(m), title, user, &base)
+	te.renderTemplate(r.Context(), w, id.FormTemplateZid, &base, formZettelData{
 		Heading:       heading,
 		MetaTitle:     runtime.GetTitle(m),
 		MetaTags:      m.GetDefault(meta.KeyTags, ""),

@@ -33,10 +33,10 @@ func MakeGetLoginHandler(te *TemplateEngine) http.HandlerFunc {
 	}
 }
 
-func renderLoginForm(
-	ctx context.Context, w http.ResponseWriter, te *TemplateEngine, retry bool) {
-	base := te.makeBaseData(ctx, runtime.GetDefaultLang(), "Login", nil)
-	te.renderTemplate(ctx, w, id.LoginTemplateZid, base, struct {
+func renderLoginForm(ctx context.Context, w http.ResponseWriter, te *TemplateEngine, retry bool) {
+	var base baseData
+	te.makeBaseData(ctx, runtime.GetDefaultLang(), "Login", nil, &base)
+	te.renderTemplate(ctx, w, id.LoginTemplateZid, &base, struct {
 		Title string
 		Retry bool
 	}{
@@ -46,8 +46,7 @@ func renderLoginForm(
 }
 
 // MakePostLoginHandlerHTML creates a new HTTP handler to authenticate the given user.
-func MakePostLoginHandlerHTML(
-	te *TemplateEngine, auth usecase.Authenticate) http.HandlerFunc {
+func MakePostLoginHandlerHTML(te *TemplateEngine, auth usecase.Authenticate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !startup.WithAuth() {
 			http.Redirect(w, r, adapter.NewURLBuilder('/').String(), http.StatusFound)

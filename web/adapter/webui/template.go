@@ -176,7 +176,7 @@ type baseData struct {
 }
 
 func (te *TemplateEngine) makeBaseData(
-	ctx context.Context, lang string, title string, user *meta.Meta) baseData {
+	ctx context.Context, lang string, title string, user *meta.Meta, data *baseData) {
 	var (
 		newZettelLinks []simpleLink
 		userZettelURL  string
@@ -194,27 +194,25 @@ func (te *TemplateEngine) makeBaseData(
 		userLogoutURL = adapter.NewURLBuilder('a').SetZid(user.Zid).String()
 	}
 
-	return baseData{
-		Lang:           lang,
-		StylesheetURL:  te.stylesheetURL,
-		Title:          title,
-		HomeURL:        te.homeURL,
-		ListZettelURL:  te.listZettelURL,
-		ListRolesURL:   te.listRolesURL,
-		ListTagsURL:    te.listTagsURL,
-		CanCreate:      canCreate,
-		NewZettelLinks: newZettelLinks,
-		WithAuth:       te.withAuth,
-		UserIsValid:    userIsValid,
-		UserZettelURL:  userZettelURL,
-		UserIdent:      userIdent,
-		UserLogoutURL:  userLogoutURL,
-		LoginURL:       te.loginURL,
-		CanReload:      te.policy.CanReload(user),
-		ReloadURL:      te.reloadURL,
-		SearchURL:      te.searchURL,
-		FooterHTML:     runtime.GetFooterHTML(),
-	}
+	data.Lang = lang
+	data.StylesheetURL = te.stylesheetURL
+	data.Title = title
+	data.HomeURL = te.homeURL
+	data.ListZettelURL = te.listZettelURL
+	data.ListRolesURL = te.listRolesURL
+	data.ListTagsURL = te.listTagsURL
+	data.CanCreate = canCreate
+	data.NewZettelLinks = newZettelLinks
+	data.WithAuth = te.withAuth
+	data.UserIsValid = userIsValid
+	data.UserZettelURL = userZettelURL
+	data.UserIdent = userIdent
+	data.UserLogoutURL = userLogoutURL
+	data.LoginURL = te.loginURL
+	data.CanReload = te.policy.CanReload(user)
+	data.ReloadURL = te.reloadURL
+	data.SearchURL = te.searchURL
+	data.FooterHTML = runtime.GetFooterHTML()
 }
 
 // htmlAttrNewWindow eturns HTML attribute string for opening a link in a new window.
@@ -272,7 +270,7 @@ func (te *TemplateEngine) renderTemplate(
 	ctx context.Context,
 	w http.ResponseWriter,
 	templateID id.Zid,
-	base baseData,
+	base *baseData,
 	data interface{}) {
 
 	bt, err := te.getTemplate(ctx, id.BaseTemplateZid)

@@ -102,8 +102,9 @@ func renderWebUIRolesList(
 	}
 
 	user := session.GetUser(ctx)
-	te.renderTemplate(ctx, w, id.RolesTemplateZid, te.makeBaseData(
-		ctx, runtime.GetDefaultLang(), runtime.GetSiteName(), user), struct {
+	var base baseData
+	te.makeBaseData(ctx, runtime.GetDefaultLang(), runtime.GetSiteName(), user, &base)
+	te.renderTemplate(ctx, w, id.RolesTemplateZid, &base, struct {
 		Roles []roleInfo
 	}{
 		Roles: roleInfos,
@@ -167,15 +168,15 @@ func renderWebUITagsList(
 		tagsList[i].Size = strconv.Itoa(countMap[count])
 	}
 
-	base := te.makeBaseData(ctx, runtime.GetDefaultLang(), runtime.GetSiteName(), user)
+	var base baseData
+	te.makeBaseData(ctx, runtime.GetDefaultLang(), runtime.GetSiteName(), user, &base)
 	minCounts := make([]countInfo, 0, len(countList))
 	for _, c := range countList {
 		sCount := strconv.Itoa(c)
-		minCounts = append(
-			minCounts, countInfo{sCount, base.ListTagsURL + "?min=" + sCount})
+		minCounts = append(minCounts, countInfo{sCount, base.ListTagsURL + "?min=" + sCount})
 	}
 
-	te.renderTemplate(ctx, w, id.TagsTemplateZid, base, struct {
+	te.renderTemplate(ctx, w, id.TagsTemplateZid, &base, struct {
 		MinCounts []countInfo
 		Tags      []tagInfo
 	}{
@@ -255,9 +256,9 @@ func renderWebUIMetaList(
 		adapter.InternalServerError(w, "Build HTML meta list", err)
 		return
 	}
-	base := te.makeBaseData(
-		ctx, runtime.GetDefaultLang(), runtime.GetSiteName(), user)
-	te.renderTemplate(ctx, w, id.ListTemplateZid, base, struct {
+	var base baseData
+	te.makeBaseData(ctx, runtime.GetDefaultLang(), runtime.GetSiteName(), user, &base)
+	te.renderTemplate(ctx, w, id.ListTemplateZid, &base, struct {
 		Title       string
 		Metas       []metaInfo
 		HasPrevNext bool

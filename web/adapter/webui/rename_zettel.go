@@ -48,8 +48,9 @@ func MakeGetRenameZettelHandler(
 		}
 
 		user := session.GetUser(ctx)
-		te.renderTemplate(ctx, w, id.RenameTemplateZid, te.makeBaseData(
-			ctx, runtime.GetLang(m), "Rename Zettel "+zid.String(), user), struct {
+		var base baseData
+		te.makeBaseData(ctx, runtime.GetLang(m), "Rename Zettel "+zid.String(), user, &base)
+		te.renderTemplate(ctx, w, id.RenameTemplateZid, &base, struct {
 			Zid       string
 			MetaPairs []meta.Pair
 		}{

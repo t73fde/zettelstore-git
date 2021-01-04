@@ -131,9 +131,10 @@ func MakeGetInfoHandler(
 			}
 			matrix = append(matrix, matrixLine{row})
 		}
-		base := te.makeBaseData(ctx, langOption.Value, textTitle, user)
+		var base baseData
+		te.makeBaseData(ctx, langOption.Value, textTitle, user, &base)
 		canCopy := base.CanCreate && !zn.Zettel.Content.IsBinary()
-		te.renderTemplate(ctx, w, id.InfoTemplateZid, base, struct {
+		te.renderTemplate(ctx, w, id.InfoTemplateZid, &base, struct {
 			Zid          string
 			WebURL       string
 			CanWrite     bool

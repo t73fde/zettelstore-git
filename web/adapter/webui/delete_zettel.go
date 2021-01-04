@@ -50,8 +50,9 @@ func MakeGetDeleteZettelHandler(
 
 		user := session.GetUser(ctx)
 		m := zettel.Meta
-		te.renderTemplate(ctx, w, id.DeleteTemplateZid, te.makeBaseData(
-			ctx, runtime.GetLang(m), "Delete Zettel "+m.Zid.String(), user), struct {
+		var base baseData
+		te.makeBaseData(ctx, runtime.GetLang(m), "Delete Zettel "+m.Zid.String(), user, &base)
+		te.renderTemplate(ctx, w, id.DeleteTemplateZid, &base, struct {
 			Zid       string
 			MetaPairs []meta.Pair
 		}{
