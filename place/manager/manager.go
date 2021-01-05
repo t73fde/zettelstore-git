@@ -144,28 +144,44 @@ func (mgr *Manager) Location() string {
 // Start the place. Now all other functions of the place are allowed.
 // Starting an already started place is not allowed.
 func (mgr *Manager) Start(ctx context.Context) error {
-	return mgr.place.Start(ctx)
+	for i, p := range mgr.subplaces {
+		if err := p.Start(ctx); err != nil {
+			for j := 0; j < i; j++ {
+				mgr.subplaces[j].Stop(ctx)
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 // Stop the started place. Now only the Start() function is allowed.
 func (mgr *Manager) Stop(ctx context.Context) error {
-	return mgr.place.Stop(ctx)
+	var err error
+	for _, p := range mgr.subplaces {
+		if err1 := p.Stop(ctx); err1 != nil && err == nil {
+			err = err1
+		}
+	}
+	return err
 }
 
 // RegisterChangeObserver registers an observer that will be notified
 // if a zettel was found to be changed.
 func (mgr *Manager) RegisterChangeObserver(f place.ObserverFunc) {
-	mgr.place.RegisterChangeObserver(f)
+	for _, p := range mgr.subplaces {
+		p.RegisterChangeObserver(f)
+	}
 }
 
 // CanCreateZettel returns true, if place could possibly create a new zettel.
 func (mgr *Manager) CanCreateZettel(ctx context.Context) bool {
-	return mgr.place.CanCreateZettel(ctx)
+	return mgr.subplaces[0].CanCreateZettel(ctx)
 }
 
 // CreateZettel creates a new zettel.
 func (mgr *Manager) CreateZettel(ctx context.Context, zettel domain.Zettel) (id.Zid, error) {
-	return mgr.place.CreateZettel(ctx, zettel)
+	return mgr.subplaces[0].CreateZettel(ctx, zettel)
 }
 
 // GetZettel retrieves a specific zettel.
@@ -186,18 +202,22 @@ func (mgr *Manager) SelectMeta(ctx context.Context, f *place.Filter, s *place.So
 
 // CanUpdateZettel returns true, if place could possibly update the given zettel.
 func (mgr *Manager) CanUpdateZettel(ctx context.Context, zettel domain.Zettel) bool {
-	return mgr.place.CanUpdateZettel(ctx, zettel)
+	return mgr.subplaces[0].CanUpdateZettel(ctx, zettel)
 }
 
 // UpdateZettel updates an existing zettel.
 func (mgr *Manager) UpdateZettel(ctx context.Context, zettel domain.Zettel) error {
-
-	return mgr.place.UpdateZettel(ctx, zettel)
+	return mgr.subplaces[0].UpdateZettel(ctx, zettel)
 }
 
 // CanRenameZettel returns true, if place could possibly rename the given zettel.
 func (mgr *Manager) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
-	return mgr.place.CanRenameZettel(ctx, zid)
+	for _, p := range mgr.subplaces {
+		if !p.CanRenameZettel(ctx, zid) {
+			return false
+		}
+	}
+	return true
 }
 
 // RenameZettel changes the current zid to a new zid.
@@ -218,5 +238,11 @@ func (mgr *Manager) DeleteZettel(ctx context.Context, zid id.Zid) error {
 // Reload clears all caches, reloads all internal data to reflect changes
 // that were possibly undetected.
 func (mgr *Manager) Reload(ctx context.Context) error {
-	return mgr.place.Reload(ctx)
+	var err error
+	for _, p := range mgr.subplaces {
+		if err1 := p.Reload(ctx); err1 != nil && err == nil {
+			err = err1
+		}
+	}
+	return err
 }

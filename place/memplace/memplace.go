@@ -54,15 +54,10 @@ func (mp *memPlace) Location() string {
 }
 
 func (mp *memPlace) Start(ctx context.Context) error {
-	if mp.next != nil {
-		if err := mp.next.Start(ctx); err != nil {
-			return err
-		}
-	}
 	mp.mx.Lock()
 	defer mp.mx.Unlock()
 	if mp.started {
-		panic("memPlace started twice")
+		panic("memplace started twice")
 	}
 	mp.zettel = make(map[id.Zid]domain.Zettel)
 	mp.started = true
@@ -77,16 +72,10 @@ func (mp *memPlace) Stop(ctx context.Context) error {
 	}
 	mp.zettel = nil
 	mp.started = false
-	if mp.next != nil {
-		return mp.next.Stop(ctx)
-	}
 	return nil
 }
 
 func (mp *memPlace) RegisterChangeObserver(f place.ObserverFunc) {
-	if mp.next != nil {
-		mp.next.RegisterChangeObserver(f)
-	}
 	mp.mx.Lock()
 	mp.observers = append(mp.observers, f)
 	mp.mx.Unlock()
@@ -239,8 +228,7 @@ func (mp *memPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
 	if !mp.started {
 		return false
 	}
-	_, ok := mp.zettel[zid]
-	return ok || (mp.next != nil && mp.next.CanRenameZettel(ctx, zid))
+	return true
 }
 
 func (mp *memPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) error {
@@ -280,9 +268,6 @@ func (mp *memPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) err
 func (mp *memPlace) Reload(ctx context.Context) error {
 	if !mp.started {
 		return place.ErrStopped
-	}
-	if mp.next != nil {
-		return mp.next.Reload(ctx)
 	}
 	return nil
 }

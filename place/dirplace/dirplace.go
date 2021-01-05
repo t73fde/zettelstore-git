@@ -108,11 +108,6 @@ func (dp *dirPlace) Start(ctx context.Context) error {
 	if !dp.isStopped() {
 		panic("Calling dirplace.Start() twice.")
 	}
-	if dp.next != nil {
-		if err := dp.next.Start(ctx); err != nil {
-			return err
-		}
-	}
 	return dp.localStart(ctx)
 }
 
@@ -159,9 +154,6 @@ func (dp *dirPlace) Stop(ctx context.Context) error {
 	if err := dp.localStop(ctx); err != nil {
 		return err
 	}
-	if dp.next != nil {
-		return dp.next.Stop(ctx)
-	}
 	return nil
 }
 
@@ -180,10 +172,6 @@ func (dp *dirPlace) localStop(ctx context.Context) error {
 // if a zettel was found to be changed.
 // possibly changed.
 func (dp *dirPlace) RegisterChangeObserver(f place.ObserverFunc) {
-	if dp.next != nil {
-		dp.next.RegisterChangeObserver(f)
-	}
-
 	dp.mxObserver.Lock()
 	dp.observers = append(dp.observers, f)
 	dp.mxObserver.Unlock()
@@ -357,9 +345,7 @@ func (dp *dirPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
 	if dp.isStopped() || dp.readonly {
 		return false
 	}
-	entry := dp.dirSrv.GetEntry(zid)
-	canLocalRename := entry.IsValid()
-	return canLocalRename && (dp.next == nil || dp.next.CanRenameZettel(ctx, zid))
+	return true
 }
 
 // Rename changes the current zettel id to a new zettel id.
@@ -457,12 +443,6 @@ func (dp *dirPlace) Reload(ctx context.Context) error {
 	err := dp.localStop(ctx)
 	if err == nil {
 		err = dp.localStart(ctx)
-	}
-	if dp.next != nil {
-		err1 := dp.next.Reload(ctx)
-		if err == nil {
-			err = err1
-		}
 	}
 	return err
 }

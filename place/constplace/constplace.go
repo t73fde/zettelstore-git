@@ -59,29 +59,15 @@ func (cp *constPlace) Location() string {
 
 // Start the place. Now all other functions of the place are allowed.
 // Starting an already started place is not allowed.
-func (cp *constPlace) Start(ctx context.Context) error {
-	if cp.next != nil {
-		return cp.next.Start(ctx)
-	}
-	return nil
-}
+func (cp *constPlace) Start(ctx context.Context) error { return nil }
 
 // Stop the started place. Now only the Start() function is allowed.
-func (cp *constPlace) Stop(ctx context.Context) error {
-	if cp.next != nil {
-		return cp.next.Stop(ctx)
-	}
-	return nil
-}
+func (cp *constPlace) Stop(ctx context.Context) error { return nil }
 
 // RegisterChangeObserver registers an observer that will be notified
 // if a zettel was found to be changed.
-func (cp *constPlace) RegisterChangeObserver(f place.ObserverFunc) {
-	// This place never changes anything. So ignore the registration.
-	if cp.next != nil {
-		cp.next.RegisterChangeObserver(f)
-	}
-}
+// This place never changes anything. So ignore the registration.
+func (cp *constPlace) RegisterChangeObserver(f place.ObserverFunc) {}
 
 func (cp *constPlace) CanCreateZettel(ctx context.Context) bool { return false }
 
@@ -164,10 +150,8 @@ func (cp *constPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
 }
 
 func (cp *constPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
-	if _, ok := cp.zettel[zid]; !ok {
-		return cp.next == nil || cp.next.CanRenameZettel(ctx, zid)
-	}
-	return false
+	_, ok := cp.zettel[zid]
+	return !ok
 }
 
 // Rename changes the current id to a new id.

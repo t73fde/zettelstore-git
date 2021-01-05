@@ -83,9 +83,7 @@ func (pp *progPlace) Location() string { return "" }
 
 // Start the place. Now all other functions of the place are allowed.
 // Starting an already started place is not allowed.
-func (pp *progPlace) Start(ctx context.Context) error {
-	return nil
-}
+func (pp *progPlace) Start(ctx context.Context) error { return nil }
 
 // Stop the started place. Now only the Start() function is allowed.
 func (pp *progPlace) Stop(ctx context.Context) error { return nil }
