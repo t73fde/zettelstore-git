@@ -94,10 +94,6 @@ type dirPlace struct {
 	mxCmds     sync.RWMutex
 }
 
-func (dp *dirPlace) isStopped() bool {
-	return dp.dirSrv == nil
-}
-
 func (dp *dirPlace) Next() place.Place { return dp.next }
 
 func (dp *dirPlace) Location() string {
@@ -105,13 +101,6 @@ func (dp *dirPlace) Location() string {
 }
 
 func (dp *dirPlace) Start(ctx context.Context) error {
-	if !dp.isStopped() {
-		panic("Calling dirplace.Start() twice.")
-	}
-	return dp.localStart(ctx)
-}
-
-func (dp *dirPlace) localStart(ctx context.Context) error {
 	dp.mxCmds.Lock()
 	dp.fCmds = make([]chan fileCmd, 0, dp.fSrvs)
 	for i := uint32(0); i < dp.fSrvs; i++ {
@@ -148,17 +137,6 @@ func (dp *dirPlace) getFileChan(zid id.Zid) chan fileCmd {
 }
 
 func (dp *dirPlace) Stop(ctx context.Context) error {
-	if dp.isStopped() {
-		return place.ErrStopped
-	}
-	if err := dp.localStop(ctx); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dp *dirPlace) localStop(ctx context.Context) error {
-
 	dirSrv := dp.dirSrv
 	dp.dirSrv = nil
 	dirSrv.Stop()
@@ -178,14 +156,11 @@ func (dp *dirPlace) RegisterChangeObserver(f place.ObserverFunc) {
 }
 
 func (dp *dirPlace) CanCreateZettel(ctx context.Context) bool {
-	return !dp.isStopped() && !dp.readonly
+	return !dp.readonly
 }
 
 func (dp *dirPlace) CreateZettel(
 	ctx context.Context, zettel domain.Zettel) (id.Zid, error) {
-	if dp.isStopped() {
-		return id.Invalid, place.ErrStopped
-	}
 	if dp.readonly {
 		return id.Invalid, place.ErrReadOnly
 	}
@@ -205,10 +180,6 @@ func (dp *dirPlace) CreateZettel(
 
 // GetZettel reads the zettel from a file.
 func (dp *dirPlace) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, error) {
-	if dp.isStopped() {
-		return domain.Zettel{}, place.ErrStopped
-	}
-
 	entry := dp.dirSrv.GetEntry(zid)
 	if !entry.IsValid() {
 		if dp.next != nil {
@@ -228,9 +199,6 @@ func (dp *dirPlace) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, e
 
 // GetMeta retrieves just the meta data of a specific zettel.
 func (dp *dirPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error) {
-	if dp.isStopped() {
-		return nil, place.ErrStopped
-	}
 	entry := dp.dirSrv.GetEntry(zid)
 	if !entry.IsValid() {
 		if dp.next != nil {
@@ -251,9 +219,6 @@ func (dp *dirPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error)
 // criteria. The result is ordered by descending zettel id.
 func (dp *dirPlace) SelectMeta(
 	ctx context.Context, f *place.Filter, s *place.Sorter) (res []*meta.Meta, err error) {
-	if dp.isStopped() {
-		return nil, place.ErrStopped
-	}
 
 	hasMatch := place.CreateFilterFunc(f)
 	entries := dp.dirSrv.GetEntries()
@@ -284,13 +249,10 @@ func (dp *dirPlace) SelectMeta(
 }
 
 func (dp *dirPlace) CanUpdateZettel(ctx context.Context, zettel domain.Zettel) bool {
-	return !dp.isStopped() && !dp.readonly
+	return !dp.readonly
 }
 
 func (dp *dirPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) error {
-	if dp.isStopped() {
-		return place.ErrStopped
-	}
 	if dp.readonly {
 		return place.ErrReadOnly
 	}
@@ -342,17 +304,11 @@ func calcSpecExt(m *meta.Meta) (directory.MetaSpec, string) {
 }
 
 func (dp *dirPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
-	if dp.isStopped() || dp.readonly {
-		return false
-	}
-	return true
+	return !dp.readonly
 }
 
 // Rename changes the current zettel id to a new zettel id.
 func (dp *dirPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) error {
-	if dp.isStopped() {
-		return place.ErrStopped
-	}
 	if dp.readonly {
 		return place.ErrReadOnly
 	}
@@ -404,7 +360,7 @@ func (dp *dirPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) err
 }
 
 func (dp *dirPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
-	if dp.isStopped() || dp.readonly {
+	if dp.readonly {
 		return false
 	}
 	entry := dp.dirSrv.GetEntry(zid)
@@ -413,9 +369,6 @@ func (dp *dirPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
 
 // DeleteZettel removes the zettel from the place.
 func (dp *dirPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
-	if dp.isStopped() {
-		return place.ErrStopped
-	}
 	if dp.readonly {
 		return place.ErrReadOnly
 	}
@@ -434,15 +387,11 @@ func (dp *dirPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
 // Reload clears all caches, reloads all internal data to reflect changes
 // that were possibly undetected.
 func (dp *dirPlace) Reload(ctx context.Context) error {
-	if dp.isStopped() {
-		return place.ErrStopped
-	}
-
 	// Brute force: stop everything, then start everything.
 	// Could be done better in the future...
-	err := dp.localStop(ctx)
+	err := dp.Stop(ctx)
 	if err == nil {
-		err = dp.localStart(ctx)
+		err = dp.Start(ctx)
 	}
 	return err
 }

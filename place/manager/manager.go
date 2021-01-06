@@ -81,6 +81,7 @@ func GetSchemes() []string {
 
 // Manager is a coordinating place.
 type Manager struct {
+	started   bool
 	placeURIs []url.URL
 	place     place.Place
 	subplaces []place.Place
@@ -144,6 +145,9 @@ func (mgr *Manager) Location() string {
 // Start the place. Now all other functions of the place are allowed.
 // Starting an already started place is not allowed.
 func (mgr *Manager) Start(ctx context.Context) error {
+	if mgr.started {
+		return place.ErrStarted
+	}
 	for i := len(mgr.subplaces) - 1; i >= 0; i-- {
 		if err := mgr.subplaces[i].Start(ctx); err != nil {
 			for j := i + 1; j < len(mgr.subplaces); j++ {
@@ -152,17 +156,22 @@ func (mgr *Manager) Start(ctx context.Context) error {
 			return err
 		}
 	}
+	mgr.started = true
 	return nil
 }
 
 // Stop the started place. Now only the Start() function is allowed.
 func (mgr *Manager) Stop(ctx context.Context) error {
+	if !mgr.started {
+		return place.ErrStopped
+	}
 	var err error
 	for _, p := range mgr.subplaces {
 		if err1 := p.Stop(ctx); err1 != nil && err == nil {
 			err = err1
 		}
 	}
+	mgr.started = false
 	return err
 }
 
@@ -176,42 +185,60 @@ func (mgr *Manager) RegisterChangeObserver(f place.ObserverFunc) {
 
 // CanCreateZettel returns true, if place could possibly create a new zettel.
 func (mgr *Manager) CanCreateZettel(ctx context.Context) bool {
-	return mgr.subplaces[0].CanCreateZettel(ctx)
+	return mgr.started && mgr.subplaces[0].CanCreateZettel(ctx)
 }
 
 // CreateZettel creates a new zettel.
 func (mgr *Manager) CreateZettel(ctx context.Context, zettel domain.Zettel) (id.Zid, error) {
+	if !mgr.started {
+		return id.Invalid, place.ErrStopped
+	}
 	return mgr.subplaces[0].CreateZettel(ctx, zettel)
 }
 
 // GetZettel retrieves a specific zettel.
 func (mgr *Manager) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, error) {
+	if !mgr.started {
+		return domain.Zettel{}, place.ErrStopped
+	}
 	return mgr.place.GetZettel(ctx, zid)
 }
 
 // GetMeta retrieves just the meta data of a specific zettel.
 func (mgr *Manager) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error) {
+	if !mgr.started {
+		return nil, place.ErrStopped
+	}
 	return mgr.place.GetMeta(ctx, zid)
 }
 
 // SelectMeta returns all zettel meta data that match the selection
 // criteria. The result is ordered by descending zettel id.
 func (mgr *Manager) SelectMeta(ctx context.Context, f *place.Filter, s *place.Sorter) ([]*meta.Meta, error) {
+	if !mgr.started {
+		return nil, place.ErrStopped
+	}
 	return mgr.place.SelectMeta(ctx, f, s)
 }
 
 // CanUpdateZettel returns true, if place could possibly update the given zettel.
 func (mgr *Manager) CanUpdateZettel(ctx context.Context, zettel domain.Zettel) bool {
-	return mgr.subplaces[0].CanUpdateZettel(ctx, zettel)
+	return mgr.started && mgr.subplaces[0].CanUpdateZettel(ctx, zettel)
 }
 
 // UpdateZettel updates an existing zettel.
 func (mgr *Manager) UpdateZettel(ctx context.Context, zettel domain.Zettel) error {
+	if !mgr.started {
+		return place.ErrStopped
+	}
 	return mgr.subplaces[0].UpdateZettel(ctx, zettel)
 }
 
 // CanRenameZettel returns true, if place could possibly rename the given zettel.
 func (mgr *Manager) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
+	if !mgr.started {
+		return false
+	}
 	for _, p := range mgr.subplaces {
 		if !p.CanRenameZettel(ctx, zid) {
 			return false
@@ -222,16 +249,22 @@ func (mgr *Manager) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
 
 // RenameZettel changes the current zid to a new zid.
 func (mgr *Manager) RenameZettel(ctx context.Context, curZid, newZid id.Zid) error {
+	if !mgr.started {
+		return place.ErrStopped
+	}
 	return mgr.place.RenameZettel(ctx, curZid, newZid)
 }
 
 // CanDeleteZettel returns true, if place could possibly delete the given zettel.
 func (mgr *Manager) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
-	return mgr.place.CanDeleteZettel(ctx, zid)
+	return mgr.started && mgr.place.CanDeleteZettel(ctx, zid)
 }
 
 // DeleteZettel removes the zettel from the place.
 func (mgr *Manager) DeleteZettel(ctx context.Context, zid id.Zid) error {
+	if !mgr.started {
+		return place.ErrStopped
+	}
 	return mgr.place.DeleteZettel(ctx, zid)
 }
 

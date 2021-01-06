@@ -151,6 +151,9 @@ func IsErrNotAllowed(err error) bool {
 	return ok
 }
 
+// ErrStarted is returned when trying to start an already started place.
+var ErrStarted = errors.New("Place is already started")
+
 // ErrStopped is returned if calling methods on a place that was not started.
 var ErrStopped = errors.New("Place is stopped")
 
