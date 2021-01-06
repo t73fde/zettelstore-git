@@ -49,8 +49,6 @@ type constPlace struct {
 	zettel map[id.Zid]constZettel
 }
 
-func (cp *constPlace) Next() place.Place { return nil }
-
 // Location returns some information where the place is located.
 func (cp *constPlace) Location() string {
 	return "const:"

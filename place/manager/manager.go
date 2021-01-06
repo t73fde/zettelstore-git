@@ -111,9 +111,6 @@ func New(placeURIs []string, readonlyMode bool) (*Manager, error) {
 	return result, nil
 }
 
-// Next returns the next place or nil if there is no next place.
-func (mgr *Manager) Next() place.Place { return nil }
-
 // Location returns some information where the place is located.
 func (mgr *Manager) Location() string {
 	if len(mgr.subplaces) < 2 {

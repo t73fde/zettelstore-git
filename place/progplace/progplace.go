@@ -74,8 +74,6 @@ func Setup(startConfig *meta.Meta, manager place.Manager) {
 	myPlace.manager = manager
 }
 
-func (pp *progPlace) Next() place.Place { return nil }
-
 // Location returns some information where the place is located.
 func (pp *progPlace) Location() string { return "" }
 

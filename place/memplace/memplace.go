@@ -45,8 +45,6 @@ func (mp *memPlace) notifyChanged(reason place.ChangeReason, zid id.Zid) {
 	}
 }
 
-func (mp *memPlace) Next() place.Place { return nil }
-
 func (mp *memPlace) Location() string {
 	return mp.u.String()
 }

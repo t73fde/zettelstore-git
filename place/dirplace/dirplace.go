@@ -92,8 +92,6 @@ type dirPlace struct {
 	mxCmds     sync.RWMutex
 }
 
-func (dp *dirPlace) Next() place.Place { return nil }
-
 func (dp *dirPlace) Location() string {
 	return dp.u.String()
 }
