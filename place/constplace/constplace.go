@@ -115,16 +115,10 @@ func (cp *constPlace) SelectMeta(
 }
 
 func (cp *constPlace) CanUpdateZettel(ctx context.Context, zettel domain.Zettel) bool {
-	if _, ok := cp.zettel[zettel.Meta.Zid]; !ok && cp.next != nil {
-		return cp.next.CanUpdateZettel(ctx, zettel)
-	}
 	return false
 }
 
 func (cp *constPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) error {
-	if _, ok := cp.zettel[zettel.Meta.Zid]; !ok && cp.next != nil {
-		return cp.next.UpdateZettel(ctx, zettel)
-	}
 	return place.ErrReadOnly
 }
 
@@ -135,10 +129,10 @@ func (cp *constPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
 
 // DeleteZettel removes the zettel from the place.
 func (cp *constPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
-	if _, ok := cp.zettel[zid]; !ok {
-		return place.ErrNotFound
+	if _, ok := cp.zettel[zid]; ok {
+		return place.ErrReadOnly
 	}
-	return place.ErrReadOnly
+	return place.ErrNotFound
 }
 
 func (cp *constPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
@@ -148,13 +142,10 @@ func (cp *constPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
 
 // Rename changes the current id to a new id.
 func (cp *constPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) error {
-	if _, ok := cp.zettel[curZid]; !ok {
-		if cp.next != nil {
-			return cp.next.RenameZettel(ctx, curZid, newZid)
-		}
-		return nil
+	if _, ok := cp.zettel[curZid]; ok {
+		return place.ErrReadOnly
 	}
-	return place.ErrReadOnly
+	return place.ErrNotFound
 }
 
 // Reload clears all caches, reloads all internal data to reflect changes

@@ -167,20 +167,12 @@ func (mp *memPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) err
 
 	zettel, ok := mp.zettel[curZid]
 	if !ok {
-		if mp.next != nil {
-			return mp.next.RenameZettel(ctx, curZid, newZid)
-		}
-		return nil
+		return place.ErrNotFound
 	}
 
-	// Check that there is no zettel with newZid, neither local nor in the next place
+	// Check that there is no zettel with newZid
 	if _, ok = mp.zettel[newZid]; ok {
 		return &place.ErrInvalidID{Zid: newZid}
-	}
-	if mp.next != nil {
-		if _, err := mp.next.GetMeta(ctx, newZid); err == nil {
-			return &place.ErrInvalidID{Zid: newZid}
-		}
 	}
 
 	meta := zettel.Meta.Clone()

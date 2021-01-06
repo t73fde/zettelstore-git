@@ -309,13 +309,10 @@ func (dp *dirPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) err
 	}
 	curEntry := dp.dirSrv.GetEntry(curZid)
 	if !curEntry.IsValid() {
-		if dp.next != nil {
-			return dp.next.RenameZettel(ctx, curZid, newZid)
-		}
-		return nil
+		return place.ErrNotFound
 	}
 
-	// Check whether zettel with new ID already exists in this place or in next places
+	// Check whether zettel with new ID already exists in this place
 	if _, err := dp.GetMeta(ctx, newZid); err == nil {
 		return &place.ErrInvalidID{Zid: newZid}
 	}
