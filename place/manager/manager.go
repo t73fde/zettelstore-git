@@ -144,9 +144,9 @@ func (mgr *Manager) Location() string {
 // Start the place. Now all other functions of the place are allowed.
 // Starting an already started place is not allowed.
 func (mgr *Manager) Start(ctx context.Context) error {
-	for i, p := range mgr.subplaces {
-		if err := p.Start(ctx); err != nil {
-			for j := 0; j < i; j++ {
+	for i := len(mgr.subplaces) - 1; i >= 0; i-- {
+		if err := mgr.subplaces[i].Start(ctx); err != nil {
+			for j := i + 1; j < len(mgr.subplaces); j++ {
 				mgr.subplaces[j].Stop(ctx)
 			}
 			return err
