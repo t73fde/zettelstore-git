@@ -41,9 +41,6 @@ type ObserverFunc func(ChangeReason, id.Zid)
 
 // Place is implemented by all Zettel places.
 type Place interface {
-	// Next returns the next place or nil if there is no next place.
-	Next() Place
-
 	// Location returns some information where the place is located.
 	// Format is dependent of the place.
 	Location() string
