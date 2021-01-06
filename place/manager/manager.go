@@ -267,7 +267,15 @@ func (mgr *Manager) RenameZettel(ctx context.Context, curZid, newZid id.Zid) err
 
 // CanDeleteZettel returns true, if place could possibly delete the given zettel.
 func (mgr *Manager) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
-	return mgr.started && mgr.place.CanDeleteZettel(ctx, zid)
+	if !mgr.started {
+		return false
+	}
+	for _, p := range mgr.subplaces {
+		if p.CanDeleteZettel(ctx, zid) {
+			return true
+		}
+	}
+	return false
 }
 
 // DeleteZettel removes the zettel from the place.
@@ -275,7 +283,12 @@ func (mgr *Manager) DeleteZettel(ctx context.Context, zid id.Zid) error {
 	if !mgr.started {
 		return place.ErrStopped
 	}
-	return mgr.place.DeleteZettel(ctx, zid)
+	for _, p := range mgr.subplaces {
+		if err := p.DeleteZettel(ctx, zid); err != place.ErrNotFound && err != place.ErrReadOnly {
+			return err
+		}
+	}
+	return place.ErrNotFound
 }
 
 // Reload clears all caches, reloads all internal data to reflect changes

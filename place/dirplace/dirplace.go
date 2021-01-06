@@ -356,7 +356,7 @@ func (dp *dirPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
 		return false
 	}
 	entry := dp.dirSrv.GetEntry(zid)
-	return entry.IsValid() || (dp.next != nil && dp.next.CanDeleteZettel(ctx, zid))
+	return entry.IsValid()
 }
 
 // DeleteZettel removes the zettel from the place.

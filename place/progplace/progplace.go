@@ -152,7 +152,8 @@ func (pp *progPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) err
 }
 
 func (pp *progPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
-	return false
+	_, ok := pp.zettel[zid]
+	return !ok
 }
 
 // DeleteZettel removes the zettel from the place.

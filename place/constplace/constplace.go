@@ -129,16 +129,14 @@ func (cp *constPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) er
 }
 
 func (cp *constPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
-	if _, ok := cp.zettel[zid]; !ok && cp.next != nil {
-		return cp.next.CanDeleteZettel(ctx, zid)
-	}
-	return false
+	_, ok := cp.zettel[zid]
+	return !ok
 }
 
 // DeleteZettel removes the zettel from the place.
 func (cp *constPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
-	if _, ok := cp.zettel[zid]; !ok && cp.next != nil {
-		return cp.next.DeleteZettel(ctx, zid)
+	if _, ok := cp.zettel[zid]; !ok {
+		return place.ErrNotFound
 	}
 	return place.ErrReadOnly
 }
