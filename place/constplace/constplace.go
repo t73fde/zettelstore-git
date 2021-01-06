@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2020 Detlef Stern
+// Copyright (c) 2020-2021 Detlef Stern
 //
 // This file is part of zettelstore.
 //
@@ -82,9 +82,6 @@ func (cp *constPlace) GetZettel(
 	if z, ok := cp.zettel[zid]; ok {
 		return domain.Zettel{Meta: makeMeta(zid, z.header), Content: z.content}, nil
 	}
-	if cp.next != nil {
-		return cp.next.GetZettel(ctx, zid)
-	}
 	return domain.Zettel{}, place.ErrNotFound
 }
 
@@ -92,9 +89,6 @@ func (cp *constPlace) GetZettel(
 func (cp *constPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error) {
 	if z, ok := cp.zettel[zid]; ok {
 		return makeMeta(zid, z.header), nil
-	}
-	if cp.next != nil {
-		return cp.next.GetMeta(ctx, zid)
 	}
 	return nil, place.ErrNotFound
 }

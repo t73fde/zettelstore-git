@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2020 Detlef Stern
+// Copyright (c) 2020-2021 Detlef Stern
 //
 // This file is part of zettelstore.
 //
@@ -182,12 +182,8 @@ func (dp *dirPlace) CreateZettel(
 func (dp *dirPlace) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, error) {
 	entry := dp.dirSrv.GetEntry(zid)
 	if !entry.IsValid() {
-		if dp.next != nil {
-			return dp.next.GetZettel(ctx, zid)
-		}
 		return domain.Zettel{}, place.ErrNotFound
 	}
-
 	m, c, err := getMetaContent(dp, &entry, zid)
 	if err != nil {
 		return domain.Zettel{}, err
@@ -201,12 +197,8 @@ func (dp *dirPlace) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, e
 func (dp *dirPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error) {
 	entry := dp.dirSrv.GetEntry(zid)
 	if !entry.IsValid() {
-		if dp.next != nil {
-			return dp.next.GetMeta(ctx, zid)
-		}
 		return nil, place.ErrNotFound
 	}
-
 	m, err := getMeta(dp, &entry, zid)
 	if err != nil {
 		return nil, err

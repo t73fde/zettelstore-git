@@ -201,7 +201,12 @@ func (mgr *Manager) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, e
 	if !mgr.started {
 		return domain.Zettel{}, place.ErrStopped
 	}
-	return mgr.place.GetZettel(ctx, zid)
+	for _, p := range mgr.subplaces {
+		if z, err := p.GetZettel(ctx, zid); err != place.ErrNotFound {
+			return z, err
+		}
+	}
+	return domain.Zettel{}, place.ErrNotFound
 }
 
 // GetMeta retrieves just the meta data of a specific zettel.
@@ -209,7 +214,12 @@ func (mgr *Manager) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error)
 	if !mgr.started {
 		return nil, place.ErrStopped
 	}
-	return mgr.place.GetMeta(ctx, zid)
+	for _, p := range mgr.subplaces {
+		if m, err := p.GetMeta(ctx, zid); err != place.ErrNotFound {
+			return m, err
+		}
+	}
+	return nil, place.ErrNotFound
 }
 
 // SelectMeta returns all zettel meta data that match the selection
