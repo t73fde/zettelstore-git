@@ -25,7 +25,7 @@ import (
 )
 
 // Connect returns a handle to the specified place
-func Connect(rawURL string, readonlyMode bool, next place.Place) (place.Place, error) {
+func Connect(rawURL string, readonlyMode bool) (place.Place, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func Connect(rawURL string, readonlyMode bool, next place.Place) (place.Place, e
 	}
 
 	if create, ok := registry[u.Scheme]; ok {
-		return create(u, next)
+		return create(u)
 	}
 	return nil, &ErrInvalidScheme{u.Scheme}
 }
@@ -57,7 +57,7 @@ type ErrInvalidScheme struct{ Scheme string }
 
 func (err *ErrInvalidScheme) Error() string { return "Invalid scheme: " + err.Scheme }
 
-type createFunc func(*url.URL, place.Place) (place.Place, error)
+type createFunc func(*url.URL) (place.Place, error)
 
 var registry = map[string]createFunc{}
 
@@ -83,49 +83,36 @@ func GetSchemes() []string {
 type Manager struct {
 	started   bool
 	placeURIs []url.URL
-	place     place.Place
 	subplaces []place.Place
 }
 
 // New creates a new managing place.
 func New(placeURIs []string, readonlyMode bool) (*Manager, error) {
-	subplaces := make([]place.Place, 0, 7)
-	progplace, err := registry[" prog"](nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	constplace, err := registry[" const"](nil, progplace)
-	if err != nil {
-		return nil, err
-	}
-	place, err := connectPlaces(placeURIs, readonlyMode, constplace)
-	if err != nil {
-		return nil, err
-	}
-	for p := place; p != nil; p = p.Next() {
+	subplaces := make([]place.Place, 0, len(placeURIs)+2)
+	for _, uri := range placeURIs {
+		p, err := Connect(uri, readonlyMode)
+		if err != nil {
+			return nil, err
+		}
 		subplaces = append(subplaces, p)
 	}
+	constplace, err := registry[" const"](nil)
+	if err != nil {
+		return nil, err
+	}
+	progplace, err := registry[" prog"](nil)
+	if err != nil {
+		return nil, err
+	}
+	subplaces = append(subplaces, constplace, progplace)
 	result := &Manager{
-		place:     place,
 		subplaces: subplaces,
 	}
 	return result, nil
 }
 
-// Helper function to connect to all given places
-func connectPlaces(placeURIs []string, readonlyMode bool, lastPlace place.Place) (place.Place, error) {
-	if len(placeURIs) == 0 {
-		return lastPlace, nil
-	}
-	next, err := connectPlaces(placeURIs[1:], readonlyMode, lastPlace)
-	if err != nil {
-		return nil, err
-	}
-	return Connect(placeURIs[0], readonlyMode, next)
-}
-
 // Next returns the next place or nil if there is no next place.
-func (mgr *Manager) Next() place.Place { return mgr.place.Next() }
+func (mgr *Manager) Next() place.Place { return nil }
 
 // Location returns some information where the place is located.
 func (mgr *Manager) Location() string {

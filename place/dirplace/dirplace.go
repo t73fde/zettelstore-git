@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	manager.Register("dir", func(u *url.URL, next place.Place) (place.Place, error) {
+	manager.Register("dir", func(u *url.URL) (place.Place, error) {
 		path := getDirPath(u)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			return nil, err
@@ -39,7 +39,6 @@ func init() {
 		dp := dirPlace{
 			u:        u,
 			readonly: getQueryBool(u, "readonly"),
-			next:     next,
 			dir:      path,
 			dirRescan: time.Duration(
 				getQueryInt(u, "rescan", 60, 600, 30*24*60*60)) * time.Second,
@@ -83,7 +82,6 @@ func getQueryInt(u *url.URL, key string, min, def, max int) int {
 type dirPlace struct {
 	u          *url.URL
 	readonly   bool
-	next       place.Place
 	observers  []place.ObserverFunc
 	mxObserver sync.RWMutex
 	dir        string
@@ -94,7 +92,7 @@ type dirPlace struct {
 	mxCmds     sync.RWMutex
 }
 
-func (dp *dirPlace) Next() place.Place { return dp.next }
+func (dp *dirPlace) Next() place.Place { return nil }
 
 func (dp *dirPlace) Location() string {
 	return dp.u.String()

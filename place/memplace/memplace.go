@@ -27,14 +27,13 @@ import (
 func init() {
 	manager.Register(
 		"mem",
-		func(u *url.URL, next place.Place) (place.Place, error) {
-			return &memPlace{u: u, next: next}, nil
+		func(u *url.URL) (place.Place, error) {
+			return &memPlace{u: u}, nil
 		})
 }
 
 type memPlace struct {
 	u         *url.URL
-	next      place.Place
 	zettel    map[id.Zid]domain.Zettel
 	mx        sync.RWMutex
 	observers []place.ObserverFunc

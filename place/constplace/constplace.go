@@ -25,8 +25,8 @@ import (
 func init() {
 	manager.Register(
 		" const",
-		func(u *url.URL, next place.Place) (place.Place, error) {
-			return &constPlace{next: next, zettel: constZettelMap}, nil
+		func(u *url.URL) (place.Place, error) {
+			return &constPlace{zettel: constZettelMap}, nil
 		})
 }
 
@@ -46,11 +46,10 @@ type constZettel struct {
 }
 
 type constPlace struct {
-	next   place.Place
 	zettel map[id.Zid]constZettel
 }
 
-func (cp *constPlace) Next() place.Place { return cp.next }
+func (cp *constPlace) Next() place.Place { return nil }
 
 // Location returns some information where the place is located.
 func (cp *constPlace) Location() string {

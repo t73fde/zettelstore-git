@@ -26,9 +26,7 @@ import (
 func init() {
 	manager.Register(
 		" prog",
-		func(u *url.URL, next place.Place) (place.Place, error) {
-			return getPlace(), nil
-		})
+		func(u *url.URL) (place.Place, error) { return getPlace(), nil })
 }
 
 type (
