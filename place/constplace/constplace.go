@@ -104,13 +104,6 @@ func (cp *constPlace) SelectMeta(
 			res = append(res, meta)
 		}
 	}
-	if cp.next != nil {
-		other, err := cp.next.SelectMeta(ctx, f, nil)
-		if err != nil {
-			return nil, err
-		}
-		return place.MergeSorted(place.ApplySorter(res, nil), other, s), nil
-	}
 	return place.ApplySorter(res, s), nil
 }
 

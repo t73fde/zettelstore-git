@@ -230,13 +230,6 @@ func (dp *dirPlace) SelectMeta(
 	if err != nil {
 		return nil, err
 	}
-	if dp.next != nil {
-		other, err := dp.next.SelectMeta(ctx, f, nil)
-		if err != nil {
-			return nil, err
-		}
-		return place.MergeSorted(place.ApplySorter(res, nil), other, s), err
-	}
 	return place.ApplySorter(res, s), nil
 }
 

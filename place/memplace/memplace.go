@@ -131,13 +131,6 @@ func (mp *memPlace) SelectMeta(
 		}
 	}
 	mp.mx.RUnlock()
-	if mp.next != nil {
-		other, err := mp.next.SelectMeta(ctx, f, nil)
-		if err != nil {
-			return nil, err
-		}
-		return place.MergeSorted(place.ApplySorter(result, nil), other, s), nil
-	}
 	return place.ApplySorter(result, s), nil
 }
 

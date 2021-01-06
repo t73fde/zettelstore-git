@@ -228,7 +228,22 @@ func (mgr *Manager) SelectMeta(ctx context.Context, f *place.Filter, s *place.So
 	if !mgr.started {
 		return nil, place.ErrStopped
 	}
-	return mgr.place.SelectMeta(ctx, f, s)
+	var result []*meta.Meta
+	for _, p := range mgr.subplaces {
+		selected, err := p.SelectMeta(ctx, f, nil)
+		if err != nil {
+			return nil, err
+		}
+		if len(result) == 0 {
+			result = selected
+		} else {
+			result = place.MergeSorted(result, selected)
+		}
+	}
+	if s == nil {
+		return result, nil
+	}
+	return place.ApplySorter(result, s), nil
 }
 
 // CanUpdateZettel returns true, if place could possibly update the given zettel.
