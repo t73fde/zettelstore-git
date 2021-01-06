@@ -149,7 +149,7 @@ func (mp *memPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) erro
 	return nil
 }
 
-func (mp *memPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool { return true }
+func (mp *memPlace) AllowRenameZettel(ctx context.Context, zid id.Zid) bool { return true }
 
 func (mp *memPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) error {
 	mp.mx.Lock()

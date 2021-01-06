@@ -79,8 +79,8 @@ type Place interface {
 	// UpdateZettel updates an existing zettel.
 	UpdateZettel(ctx context.Context, zettel domain.Zettel) error
 
-	// CanRenameZettel returns true, if place could possibly rename the given zettel.
-	CanRenameZettel(ctx context.Context, zid id.Zid) bool
+	// AllowRenameZettel returns true, if place will not disallow renaming the zettel.
+	AllowRenameZettel(ctx context.Context, zid id.Zid) bool
 
 	// RenameZettel changes the current Zid to a new Zid.
 	RenameZettel(ctx context.Context, curZid, newZid id.Zid) error

@@ -243,13 +243,13 @@ func (mgr *Manager) UpdateZettel(ctx context.Context, zettel domain.Zettel) erro
 	return mgr.subplaces[0].UpdateZettel(ctx, zettel)
 }
 
-// CanRenameZettel returns true, if place could possibly rename the given zettel.
-func (mgr *Manager) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
+// AllowRenameZettel returns true, if place will not disallow renaming the zettel.
+func (mgr *Manager) AllowRenameZettel(ctx context.Context, zid id.Zid) bool {
 	if !mgr.started {
 		return false
 	}
 	for _, p := range mgr.subplaces {
-		if !p.CanRenameZettel(ctx, zid) {
+		if !p.AllowRenameZettel(ctx, zid) {
 			return false
 		}
 	}

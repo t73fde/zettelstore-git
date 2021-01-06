@@ -147,20 +147,7 @@ func (pp *progPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) err
 	return place.ErrReadOnly
 }
 
-func (pp *progPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool {
-	_, ok := pp.zettel[zid]
-	return !ok
-}
-
-// DeleteZettel removes the zettel from the place.
-func (pp *progPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
-	if _, ok := pp.zettel[zid]; ok {
-		return place.ErrReadOnly
-	}
-	return place.ErrNotFound
-}
-
-func (pp *progPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
+func (pp *progPlace) AllowRenameZettel(ctx context.Context, zid id.Zid) bool {
 	_, ok := pp.zettel[zid]
 	return !ok
 }
@@ -168,6 +155,16 @@ func (pp *progPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
 // Rename changes the current id to a new id.
 func (pp *progPlace) RenameZettel(ctx context.Context, curZid, newZid id.Zid) error {
 	if _, ok := pp.zettel[curZid]; ok {
+		return place.ErrReadOnly
+	}
+	return place.ErrNotFound
+}
+
+func (pp *progPlace) CanDeleteZettel(ctx context.Context, zid id.Zid) bool { return false }
+
+// DeleteZettel removes the zettel from the place.
+func (pp *progPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
+	if _, ok := pp.zettel[zid]; ok {
 		return place.ErrReadOnly
 	}
 	return place.ErrNotFound

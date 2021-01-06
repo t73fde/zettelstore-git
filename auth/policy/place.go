@@ -149,8 +149,8 @@ func (pp *polPlace) UpdateZettel(ctx context.Context, zettel domain.Zettel) erro
 	return place.NewErrNotAllowed("Write", user, zid)
 }
 
-func (pp *polPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
-	return pp.place.CanRenameZettel(ctx, zid)
+func (pp *polPlace) AllowRenameZettel(ctx context.Context, zid id.Zid) bool {
+	return pp.place.AllowRenameZettel(ctx, zid)
 }
 
 // Rename changes the current zid to a new zid.

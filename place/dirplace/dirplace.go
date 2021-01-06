@@ -284,7 +284,7 @@ func calcSpecExt(m *meta.Meta) (directory.MetaSpec, string) {
 	return directory.MetaSpecFile, syntax
 }
 
-func (dp *dirPlace) CanRenameZettel(ctx context.Context, zid id.Zid) bool {
+func (dp *dirPlace) AllowRenameZettel(ctx context.Context, zid id.Zid) bool {
 	return !dp.readonly
 }
 
