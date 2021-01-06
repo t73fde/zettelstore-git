@@ -214,7 +214,7 @@ func (dp *dirPlace) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, e
 		if dp.next != nil {
 			return dp.next.GetZettel(ctx, zid)
 		}
-		return domain.Zettel{}, &place.ErrUnknownID{Zid: zid}
+		return domain.Zettel{}, place.ErrNotFound
 	}
 
 	m, c, err := getMetaContent(dp, &entry, zid)
@@ -236,7 +236,7 @@ func (dp *dirPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error)
 		if dp.next != nil {
 			return dp.next.GetMeta(ctx, zid)
 		}
-		return nil, &place.ErrUnknownID{Zid: zid}
+		return nil, place.ErrNotFound
 	}
 
 	m, err := getMeta(dp, &entry, zid)

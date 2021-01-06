@@ -113,7 +113,7 @@ func (pp *progPlace) GetZettel(
 			return domain.Zettel{Meta: meta}, nil
 		}
 	}
-	return domain.Zettel{}, &place.ErrUnknownID{Zid: zid}
+	return domain.Zettel{}, place.ErrNotFound
 }
 
 // GetMeta retrieves just the meta data of a specific zettel.
@@ -125,7 +125,7 @@ func (pp *progPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error
 			}
 		}
 	}
-	return nil, &place.ErrUnknownID{Zid: zid}
+	return nil, place.ErrNotFound
 }
 
 // SelectMeta returns all zettel meta data that match the selection

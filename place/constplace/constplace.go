@@ -85,7 +85,7 @@ func (cp *constPlace) GetZettel(
 	if cp.next != nil {
 		return cp.next.GetZettel(ctx, zid)
 	}
-	return domain.Zettel{}, &place.ErrUnknownID{Zid: zid}
+	return domain.Zettel{}, place.ErrNotFound
 }
 
 // GetMeta retrieves just the meta data of a specific zettel.
@@ -96,7 +96,7 @@ func (cp *constPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, erro
 	if cp.next != nil {
 		return cp.next.GetMeta(ctx, zid)
 	}
-	return nil, &place.ErrUnknownID{Zid: zid}
+	return nil, place.ErrNotFound
 }
 
 // SelectMeta returns all zettel meta data that match the selection

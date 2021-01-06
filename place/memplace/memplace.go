@@ -127,7 +127,7 @@ func (mp *memPlace) GetZettel(ctx context.Context, zid id.Zid) (domain.Zettel, e
 		if mp.next != nil {
 			return mp.next.GetZettel(ctx, zid)
 		}
-		return domain.Zettel{}, &place.ErrUnknownID{Zid: zid}
+		return domain.Zettel{}, place.ErrNotFound
 	}
 	return zettel, nil
 }
@@ -144,7 +144,7 @@ func (mp *memPlace) GetMeta(ctx context.Context, zid id.Zid) (*meta.Meta, error)
 		if mp.next != nil {
 			return mp.next.GetMeta(ctx, zid)
 		}
-		return nil, &place.ErrUnknownID{Zid: zid}
+		return nil, place.ErrNotFound
 	}
 	return zettel.Meta, nil
 }
@@ -215,7 +215,7 @@ func (mp *memPlace) DeleteZettel(ctx context.Context, zid id.Zid) error {
 		if mp.next != nil {
 			return mp.next.DeleteZettel(ctx, zid)
 		}
-		return &place.ErrUnknownID{Zid: zid}
+		return place.ErrNotFound
 	}
 	delete(mp.zettel, zid)
 	mp.notifyChanged(place.OnDelete, zid)

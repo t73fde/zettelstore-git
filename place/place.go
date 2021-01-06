@@ -157,10 +157,8 @@ var ErrStopped = errors.New("Place is stopped")
 // ErrReadOnly is returned if there is an attepmt to write to a read-only place.
 var ErrReadOnly = errors.New("Read-only place")
 
-// ErrUnknownID is returned if the zettel id is unknown to the place.
-type ErrUnknownID struct{ Zid id.Zid }
-
-func (err *ErrUnknownID) Error() string { return "Unknown Zettel id: " + err.Zid.String() }
+// ErrNotFound is returned if a zettel was not found in the place.
+var ErrNotFound = errors.New("Zettel not found")
 
 // ErrInvalidID is returned if the zettel id is not appropriate for the place operation.
 type ErrInvalidID struct{ Zid id.Zid }
